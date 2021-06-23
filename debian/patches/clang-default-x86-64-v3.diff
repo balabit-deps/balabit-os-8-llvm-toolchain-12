@@ -1,0 +1,11 @@
+--- a/clang/lib/Driver/ToolChains/Arch/X86.cpp
++++ b/clang/lib/Driver/ToolChains/Arch/X86.cpp
+@@ -91,7 +91,7 @@ std::string x86::getX86TargetCPU(const A
+ 
+   // Everything else goes to x86-64 in 64-bit mode.
+   if (Is64Bit)
+-    return "x86-64";
++    return "x86-64-v3";
+ 
+   switch (Triple.getOS()) {
+   case llvm::Triple::NetBSD:
