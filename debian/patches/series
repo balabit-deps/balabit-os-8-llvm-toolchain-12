@@ -139,3 +139,4 @@ D99501-ignore-lto-auto.diff
 #clang-default-x86-64-v2.diff
 #clang-default-x86-64-v3.diff
 flto-test-cases.diff
+07234c7d6bc246925710b88a1f9552f678587165.patch

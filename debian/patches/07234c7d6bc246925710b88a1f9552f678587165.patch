@@ -1,0 +1,82 @@
+From 07234c7d6bc246925710b88a1f9552f678587165 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Christoffer=20Lern=C3=B6?= <christoffer.lerno@gmail.com>
+Date: Fri, 19 Mar 2021 18:55:52 -0400
+Subject: [PATCH] Add type attributes to LLVM C API
+
+The LLVM C API is missing type attributes as is needed by attributes
+such as sret and byval. This patch adds three missing wrapper
+functions.
+
+Bugzilla: https://bugs.llvm.org/show_bug.cgi?id=48249
+
+https://reviews.llvm.org/D97763
+(cherry picked from commit 528f6f7d617757addac9b51dd5bcc1ab1352e9be)
+---
+ llvm/include/llvm-c/Core.h | 12 ++++++++++++
+ llvm/lib/IR/Core.cpp       | 16 ++++++++++++++++
+ 2 files changed, 28 insertions(+)
+
+diff --git a/llvm/include/llvm-c/Core.h b/llvm/include/llvm-c/Core.h
+index a78df16ca404c..2901ab715810f 100644
+--- a/llvm/include/llvm-c/Core.h
++++ b/llvm/include/llvm-c/Core.h
+@@ -604,6 +604,17 @@ unsigned LLVMGetEnumAttributeKind(LLVMAttributeRef A);
+  */
+ uint64_t LLVMGetEnumAttributeValue(LLVMAttributeRef A);
+ 
++/**
++ * Create a type attribute
++ */
++LLVMAttributeRef LLVMCreateTypeAttribute(LLVMContextRef C, unsigned KindID,
++                                         LLVMTypeRef type_ref);
++
++/**
++ * Get the type attribute's value.
++ */
++LLVMTypeRef LLVMGetTypeAttributeValue(LLVMAttributeRef A);
++
+ /**
+  * Create a string attribute.
+  */
+@@ -626,6 +637,7 @@ const char *LLVMGetStringAttributeValue(LLVMAttributeRef A, unsigned *Length);
+  */
+ LLVMBool LLVMIsEnumAttribute(LLVMAttributeRef A);
+ LLVMBool LLVMIsStringAttribute(LLVMAttributeRef A);
++LLVMBool LLVMIsTypeAttribute(LLVMAttributeRef A);
+ 
+ /**
+  * Obtain a Type from a context by its registered name.
+diff --git a/llvm/lib/IR/Core.cpp b/llvm/lib/IR/Core.cpp
+index 90ba69069baea..039b34ace6abe 100644
+--- a/llvm/lib/IR/Core.cpp
++++ b/llvm/lib/IR/Core.cpp
+@@ -164,6 +164,18 @@ uint64_t LLVMGetEnumAttributeValue(LLVMAttributeRef A) {
+   return Attr.getValueAsInt();
+ }
+ 
++LLVMAttributeRef LLVMCreateTypeAttribute(LLVMContextRef C, unsigned KindID,
++                                         LLVMTypeRef type_ref) {
++  auto &Ctx = *unwrap(C);
++  auto AttrKind = (Attribute::AttrKind)KindID;
++  return wrap(Attribute::get(Ctx, AttrKind, unwrap(type_ref)));
++}
++
++LLVMTypeRef LLVMGetTypeAttributeValue(LLVMAttributeRef A) {
++  auto Attr = unwrap(A);
++  return wrap(Attr.getValueAsType());
++}
++
+ LLVMAttributeRef LLVMCreateStringAttribute(LLVMContextRef C,
+                                            const char *K, unsigned KLength,
+                                            const char *V, unsigned VLength) {
+@@ -194,6 +206,10 @@ LLVMBool LLVMIsStringAttribute(LLVMAttributeRef A) {
+   return unwrap(A).isStringAttribute();
+ }
+ 
++LLVMBool LLVMIsTypeAttribute(LLVMAttributeRef A) {
++  return unwrap(A).isTypeAttribute();
++}
++
+ char *LLVMGetDiagInfoDescription(LLVMDiagnosticInfoRef DI) {
+   std::string MsgStorage;
+   raw_string_ostream Stream(MsgStorage);
